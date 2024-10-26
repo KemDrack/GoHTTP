@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-
+	
 	"github.com/gorilla/mux"
 )
 
@@ -19,26 +19,28 @@ type requestBody struct {
 
 
 func HandlerPost(w http.ResponseWriter, r *http.Request) { // ОТВЕТ ЗАПРОС  содержащую всю информацию о запросе (например, метод, заголовки, тело).
+	
 	var requestBody requestBody
 
 	err:= json.NewDecoder(r.Body).Decode(&requestBody)
-	Message = requestBody.Message  
 
 	if err != nil {
 		http.Error(w, "Ошибка в JSON",http.StatusBadRequest)
 		return
 	}
+
+	Message = requestBody.Message  
 	log.Printf("Received message: %s", Message) 
 	fmt.Fprintf(w, "Message received: %s", Message)
-	
+
 }
 			
-
 func HandlerGET(w http.ResponseWriter , r *http.Request) {
 	if Message == "" {
 		http.Error(w, "Message not found" , http.StatusNotFound)
 		return
 	}
+	
 	log.Printf("Received message: %s", Message) 
 	fmt.Fprintln(w, "Last received message:" , Message)
 }
