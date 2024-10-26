@@ -39,6 +39,7 @@ func HandlerGET(w http.ResponseWriter , r *http.Request) {
 		http.Error(w, "Message not found" , http.StatusNotFound)
 		return
 	}
+	log.Printf("Received message: %s", Message) 
 	fmt.Fprintln(w, "Last received message:" , Message)
 }
 
