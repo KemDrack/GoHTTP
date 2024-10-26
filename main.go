@@ -40,9 +40,35 @@ func HandlerGET(w http.ResponseWriter , r *http.Request) {
 		http.Error(w, "Message not found" , http.StatusNotFound)
 		return
 	}
-	
+
 	log.Printf("Received message: %s", Message) 
 	fmt.Fprintln(w, "Last received message:" , Message)
+}
+
+func HandleDelete( w http.ResponseWriter, r *http.Request) {
+
+	if Message == "" {
+		http.Error(w, "Message already empty", http.StatusNotFound)
+	}
+
+	Message = ""
+	log.Printf("DELETE %s", Message )
+	fmt.Fprintln(w, "Данные удалены")
+}
+
+func HandlerPut(w http.ResponseWriter, r *http.Request) {
+	var requestBody requestBody
+
+	err:= json.NewDecoder(r.Body).Decode(&requestBody)
+	if err != nil {
+		http.Error(w, "Ошибка в JSON", http.StatusBadRequest)
+		return
+	}
+
+	Message = requestBody.Message
+	log.Printf("Update Message: %s" , Message)
+	fmt.Fprintf(w, "Message update to %s", Message)
+
 }
 
 
@@ -53,6 +79,8 @@ func main() {
 
 	router.HandleFunc("/api/hello", HandlerGET).Methods("GET")
 	router.HandleFunc("/api/hello", HandlerPost).Methods("POST")
+	router.HandleFunc("/api/hello", HandleDelete).Methods("DELETE")
+	router.HandleFunc("/api/hello", HandlerPost).Methods("PUT")
 	
 	log.Println("Server starting on :8080...")
 	http.ListenAndServe(":8080", router )
