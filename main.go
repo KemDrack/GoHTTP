@@ -21,14 +21,14 @@ type requestBody struct {
 func HandlerPost(w http.ResponseWriter, r *http.Request) { // ОТВЕТ ЗАПРОС  содержащую всю информацию о запросе (например, метод, заголовки, тело).
 	
 	var requestBody requestBody
-
+	// decoder:= json.NewDecoder(r.Body)
 	err:= json.NewDecoder(r.Body).Decode(&requestBody)
 
 	if err != nil {
 		http.Error(w, "Ошибка в JSON",http.StatusBadRequest)
 		return
 	}
-
+	defer r.Body.Close()
 	Message = requestBody.Message  
 	log.Printf("Received message: %s", Message) 
 	fmt.Fprintf(w, "Message received: %s", Message)
