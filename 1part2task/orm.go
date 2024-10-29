@@ -4,7 +4,8 @@ import "gorm.io/gorm"
 
 type Message struct {
 	gorm.Model // добавляем поля ID, CreatedAt, UpdatedAt и DeletedAt
-	Text string `json:"text"` // Наш сервер будет ожидать json c полем text
+	Task string `json:"task"`  // Вот эти поля task и progress будут отображаться именем колонки
+	IsDone string `json:"progress"`// Наш сервер будет ожидать json c полями ...
 }
 
 //  структура нашего Message для БД, то, какие столбцы будут в нашей БД

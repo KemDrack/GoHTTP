@@ -14,8 +14,8 @@ import (
 
 
 type requestBody struct {
-	Text string `json:"text"`
-
+	Task string `json:"task"`
+	IsDone string `json:"progress"` // Именно эти поля в json будут считываться
 }
 
 
@@ -33,14 +33,15 @@ func PostMessage(w http.ResponseWriter, r *http.Request) {
         return
     }
 	
-	message:= Message{Text: requestBody.Text}
-
-	if err:= DB.Create(&message).Error; err!=nil {
+	task:= Message{Task: requestBody.Task, IsDone: requestBody.IsDone,}
+	
+	if err:= DB.Create(&task).Error; err!=nil {
 		http.Error(w, "Failed to save message", http.StatusInternalServerError)
         return
 	}
-	
-	fmt.Fprintln(w, "Текст добавлен в БД")
+
+		
+	fmt.Fprintln(w, "Задача и прогресс добавлены в БД")
 	
 }
 
@@ -63,6 +64,39 @@ func GetMessages(w http.ResponseWriter, r *http.Request) {
 
 
 }
+
+// func UpdateMessages(w http.ResponseWriter, r *http.Request) {
+// 	var requestBody requestBody  
+
+// 	err:= json.NewDecoder(r.Body).Decode(&requestBody) // Данные декодируются в структуру requestBody
+// 	if err!= nil {
+// 		http.Error(w,"Error in JSON", http.StatusBadRequest)
+// 		return
+// 	}
+	
+// 	if DB == nil {
+// 		http.Error(w, "Database connection error", http.StatusInternalServerError)
+// 	}
+
+// 	vars:= mux.Vars(r)
+// 	id:= vars["id"]
+
+// 	var message Message
+
+// 	if err:= DB.First(&message, id).Error; err != nil {
+// 		http.Error(w, "Message not found", http.StatusNotFound)
+//         return
+// 	}
+// 	message.Task = requestBody.Task
+//     message.IsDone = requestBody.IsDone
+
+// 	if err := DB.Save(&message).Error; err != nil {
+//         http.Error(w, "Failed to update message", http.StatusInternalServerError)
+//         return
+//     }
+
+//     fmt.Fprintln(w, "Запись успешно обновлена")
+// }
 
 
 func main() {
