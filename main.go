@@ -9,11 +9,11 @@ import (
 	"github.com/gorilla/mux"
 )
 
-var Message string = "Hello World" //  хранит последнее полученное сообщение , полученного от клиента
+var Task string = "Hello World" //  хранит последнее полученное сообщение , полученного от клиента
 
 
 type requestBody struct {
-	Message string `json:"message"` // хранения переданного JSON-поля "message"
+	Task string `json:"task"` // хранения переданного JSON-поля "message"
 }
 
 
@@ -28,31 +28,31 @@ func HandlerPost(w http.ResponseWriter, r *http.Request) { // ОТВЕТ ЗАП�
 		http.Error(w, "Ошибка в JSON",http.StatusBadRequest)
 		return
 	}
-	defer r.Body.Close()
-	Message = requestBody.Message  
-	log.Printf("Received message: %s", Message) 
-	fmt.Fprintf(w, "Message received: %s", Message)
+	
+	Task = requestBody.Task  
+	log.Printf("Вы загрузили новую задачу %s", Task) 
+	fmt.Fprintf(w, "Message received: %s", Task)
 
 }
 			
 func HandlerGET(w http.ResponseWriter , r *http.Request) {
-	if Message == "" {
+	if Task == "" {
 		http.Error(w, "Message not found" , http.StatusNotFound)
 		return
 	}
 
-	log.Printf("Received message: %s", Message) 
-	fmt.Fprintln(w, "Last received message:" , Message)
+	log.Printf("Received message: %s", Task) 
+	fmt.Fprintln(w, "Вот последняя задача:" , Task)
 }
 
 func HandleDelete( w http.ResponseWriter, r *http.Request) {
 
-	if Message == "" {
+	if Task == "" {
 		http.Error(w, "Message already empty", http.StatusNotFound)
 	}
 
-	Message = ""
-	log.Printf("DELETE %s", Message )
+	Task = ""
+	log.Printf("DELETE %s", Task )
 	fmt.Fprintln(w, "Данные удалены")
 }
 
@@ -64,10 +64,10 @@ func HandlerPut(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Ошибка в JSON", http.StatusBadRequest)
 		return
 	}
-
-	Message = requestBody.Message
-	log.Printf("Update Message: %s" , Message)
-	fmt.Fprintf(w, "Message update to %s", Message)
+	
+	Task = requestBody.Task
+	log.Printf("Update Message: %s" , Task)
+	fmt.Fprintf(w, "Message update to %s", Task)
 
 }
 
@@ -76,7 +76,7 @@ func HandlerPut(w http.ResponseWriter, r *http.Request) {
 func main() {
 	// var Message int
 	router:= mux.NewRouter()
-
+	
 	router.HandleFunc("/api/hello", HandlerGET).Methods("GET")
 	router.HandleFunc("/api/hello", HandlerPost).Methods("POST")
 	router.HandleFunc("/api/hello", HandleDelete).Methods("DELETE")
