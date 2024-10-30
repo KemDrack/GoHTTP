@@ -105,21 +105,26 @@ func PutMessages(w http.ResponseWriter, r *http.Request) {
 }
 
 func DeleteMessages(w http.ResponseWriter, r *http.Request) {
+	log.Println("Received DELETE request")
+
 	vars := mux.Vars(r)
     idStr := vars["id"]
 
 	id, err := strconv.Atoi(idStr)
 	if err != nil {
+		log.Println("Invalid ID:", idStr)
         http.Error(w, "Invalid ID", http.StatusBadRequest)
         return
     }
 
 	if err := DB.Delete(&Message{}, id).Error; err != nil {
+		log.Println("Failed to delete message:", err)
         http.Error(w, "Failed to delete message", http.StatusInternalServerError)
         return
     }
 
 	fmt.Fprintf(w, "Запись успешно удалена")
+	log.Println("Record deleted successfully for ID:", id)
 
 
 
