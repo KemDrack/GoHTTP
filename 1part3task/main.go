@@ -3,131 +3,147 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"strconv"
 
 	"log"
 	"net/http"
 
 	"github.com/gorilla/mux"
-	
-	
 )
 
-
 type requestBody struct {
-	Task string `json:"task"`
+	Task   string `json:"task"`
 	IsDone string `json:"progress"` // Именно эти поля в json будут считываться
 }
-
 
 func PostMessage(w http.ResponseWriter, r *http.Request) {
 	var requestBody requestBody
 
-	err:= json.NewDecoder(r.Body).Decode(&requestBody)
+	err := json.NewDecoder(r.Body).Decode(&requestBody)
 
-	if err!= nil {
+	if err != nil {
 		http.Error(w, "Error in JSON", http.StatusBadRequest)
 		return
 	}
 	if DB == nil {
-        http.Error(w, "Database connection error", http.StatusInternalServerError)
-        return
-    }
-	
-	task:= Message{Task: requestBody.Task, IsDone: requestBody.IsDone,}
-	
-	if err:= DB.Create(&task).Error; err!=nil {
-		http.Error(w, "Failed to save message", http.StatusInternalServerError)
-        return
+		http.Error(w, "Database connection error", http.StatusInternalServerError)
+		return
 	}
 
-		
+	task := Message{Task: requestBody.Task, IsDone: requestBody.IsDone}
+
+	if err := DB.Create(&task).Error; err != nil {
+		http.Error(w, "Failed to save message", http.StatusInternalServerError)
+		return
+	}
+
 	fmt.Fprintln(w, "Задача и прогресс добавлены в БД")
-	
+
 }
 
-
 func GetMessages(w http.ResponseWriter, r *http.Request) {
-	
+
 	w.Header().Set("Content-Type", "application/json") // Чтобы вывод клиенту был в виде JSON
 
 	var messages []Message
 
-	if err:= DB.Find(&messages).Error; err!= nil {
-		http.Error(w,"Failed find text", http.StatusInternalServerError)
+	if err := DB.Find(&messages).Error; err != nil {
+		http.Error(w, "Failed find text", http.StatusInternalServerError)
 		return
 	}
 
 	if err := json.NewEncoder(w).Encode(&messages); err != nil {
-        http.Error(w, "Error encoding JSON", http.StatusInternalServerError)
-        return
-    }
-
+		http.Error(w, "Error encoding JSON", http.StatusInternalServerError)
+		return
+	}
 
 }
 
 func PutMessages(w http.ResponseWriter, r *http.Request) {
-// мы должны обработать JSON файл который к нам приходит и декодировать в переменную requestBody
+	// мы должны обработать JSON файл который к нам приходит и декодировать в переменную requestBody
+	 // Декодируем данные запроса в структуру requestBody
 	var requestBody requestBody
-	err:= json.NewDecoder(r.Body).Decode(&requestBody)
-	if err!=nil {
-		http.Error(w,"error in JSON",http.StatusBadGateway)
+	err := json.NewDecoder(r.Body).Decode(&requestBody)
+	if err!= nil {
+		http.Error(w, "Error in JSON", http.StatusBadRequest)
 		return
-	} 
-	
-	// Используя mux.Vars(r), мы получаем значение id из URL
-	vars:= mux.Vars(r)
-	id:=vars["id"]
-	
-	// переменная которая работает со слобцами БД
+	}
+		
+ 
+	// Извлекаем ID из URL
+	vars := mux.Vars(r) // используется для извлечения переменных из URL
+	idStr := vars["id"] // Функция mux.Vars(r) возвращает map[string]string, содержащую параметры из пути, заданные в маршруте. В данном случае, маршрут /api/messages/{id} задает переменную {id}, поэтому mux.Vars(r)["id"] вернет строковое значение ID из URL.
+	id, err := strconv.Atoi(idStr) // Например, если запрос отправляется на /api/messages/1, vars["id"] вернет строку "1".
+	if err != nil { // Далее strconv.Atoi(idStr) преобразует строковое значение idStr в целое число. Это важно, потому что gorm ожидает числовой идентификатор для поиска записи по первичному ключу.
+		http.Error(w, "Invalid ID", http.StatusBadRequest)
+		return
+	}
+ 
+	// Находим запись по ID
 	var message Message
-	
-	// ищем запись с указанным ID
-	if err:= DB.First(&message, id).Error; err!= nil {
+	if err := DB.First(&message, id).Error; err != nil { // используется для поиска записи Message с указанным ID в базе данных.
 		http.Error(w, "Message not found", http.StatusNotFound)
 		return
 	}
-
-	// Обновляем поля записи
-
+ 
+	// Обновляем только те поля, которые переданы в JSON
 	if requestBody.Task != "" {
-        message.Task = requestBody.Task
-    }
-    if requestBody.IsDone != "" {
-        message.IsDone = requestBody.IsDone
-    }
-	
-
-	if err:= DB.Save(&message).Error; err!= nil {
-		http.Error(w,"Ошибка обновления данных", http.StatusInternalServerError)
+		message.Task = requestBody.Task
+	}
+	if requestBody.IsDone != "" {
+		message.IsDone = requestBody.IsDone
+	}
+ 
+	// Сохраняем изменения
+	if err := DB.Save(&message).Error; err != nil {
+		http.Error(w, "Failed to update message", http.StatusInternalServerError)
 		return
 	}
-
-	fmt.Fprintln(w, "Запись успешно обновлена")
-
+ 
+	fmt.Fprintf(w, "Запись успешно обновлена")
 
 }
 
 func DeleteMessages(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+    idStr := vars["id"]
+
+	id, err := strconv.Atoi(idStr)
+	if err != nil {
+        http.Error(w, "Invalid ID", http.StatusBadRequest)
+        return
+    }
+
+	if err := DB.Delete(&Message{}, id).Error; err != nil {
+        http.Error(w, "Failed to delete message", http.StatusInternalServerError)
+        return
+    }
+
+	fmt.Fprintf(w, "Запись успешно удалена")
+
 
 
 }
 
-
 func main() {
 	// Вызываем метод InitDB() из файла db.go
 	InitDB()
-	
+
 	// Автоматическая миграция модели Message
-	DB.AutoMigrate(&Message{}) //  Gorm создаёт в базе данных таблицу с именем messages
+	DB.AutoMigrate(&Message{}) //  GORM проверяет, существует ли таблица, соответствующая этой структуре, и если нет — создает её с колонками task и is_done.
 
 	router := mux.NewRouter()
 
 	router.HandleFunc("/api/messages", PostMessage).Methods("POST")
 	router.HandleFunc("/api/messages", GetMessages).Methods("GET")
 	router.HandleFunc("/api/messages/{id}", PutMessages).Methods("PUT")
+	router.HandleFunc("/api/messages/{id}", DeleteMessages).Methods("DELETE")
 
 	log.Println("Server is staring with DB on :8080 port...")
-	http.ListenAndServe(":8080", router)
-	
+	err := http.ListenAndServe(":8080", router)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
 
 }
