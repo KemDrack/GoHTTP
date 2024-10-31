@@ -13,7 +13,7 @@ import (
 
 type requestBody struct {
 	Task   string `json:"task"`
-	IsDone string `json:"progress"` // Именно эти поля в json будут считываться
+	IsDone bool `json:"is_done"` // Именно эти поля в json будут считываться
 }
 
 func PostMessage(w http.ResponseWriter, r *http.Request) {
@@ -44,7 +44,6 @@ func PostMessage(w http.ResponseWriter, r *http.Request) {
 func GetMessages(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json") // Чтобы вывод клиенту был в виде JSON
-
 	var messages []Message
 
 	if err := DB.Find(&messages).Error; err != nil {
@@ -90,10 +89,9 @@ func PutMessages(w http.ResponseWriter, r *http.Request) {
 	if requestBody.Task != "" {
 		message.Task = requestBody.Task
 	}
-	if requestBody.IsDone != "" {
-		message.IsDone = requestBody.IsDone
-	}
- 
+	
+	message.IsDone = requestBody.IsDone
+	 
 	// Сохраняем изменения
 	if err := DB.Save(&message).Error; err != nil {
 		http.Error(w, "Failed to update message", http.StatusInternalServerError)
